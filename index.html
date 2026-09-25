@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AeroLux — Book Flights & Pick Your Seat</title>
+  <meta name="description" content="Search flights, compare fares, pick your exact seat on a live 3D cabin map and get your boarding pass in seconds." />
+  <meta name="theme-color" content="#050714" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237c5cff'/%3E%3Cstop offset='1' stop-color='%2322d3ee'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath fill='url(%23g)' d='M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Unbounded:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-view="search">
+
+  <!-- ===== Ambient layers ===== -->
+  <canvas id="starfield" aria-hidden="true"></canvas>
+  <div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="cursor-glow" aria-hidden="true"></div>
+
+  <!-- ===== Top bar ===== -->
+  <header class="topbar">
+    <a class="brand" href="#" data-go="search" aria-label="AeroLux home">
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>
+      </span>
+      <span class="brand-name">Aero<b>Lux</b></span>
+    </a>
+
+    <nav class="nav-links" aria-label="Main">
+      <a href="#search-card" class="is-active">Book</a>
+      <a href="#deals">Destinations</a>
+      <a href="#why">Experience</a>
+      <a href="#" data-demo>Manage trip</a>
+    </nav>
+
+    <div class="stepper" id="stepper" aria-label="Booking progress">
+      <div class="stepper-track"><div class="stepper-fill" id="stepFill"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></div></div>
+      <ol>
+        <li class="step" data-step="0"><span>1</span><em>Search</em></li>
+        <li class="step" data-step="1"><span>2</span><em>Flights</em></li>
+        <li class="step" data-step="2"><span>3</span><em>Seats</em></li>
+        <li class="step" data-step="3"><span>4</span><em>Travellers</em></li>
+        <li class="step" data-step="4"><span>5</span><em>Payment</em></li>
+        <li class="step" data-step="5"><span>6</span><em>Board</em></li>
+      </ol>
+    </div>
+
+    <button class="btn-ghost sign-in" type="button" data-demo>
+      <svg viewBox="0 0 24 24"><path d="M12 12a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"/></svg>
+      <span>Sign in</span>
+    </button>
+  </header>
+
+  <main>
+    <!-- =========================================================
+         VIEW 1 — SEARCH
+    ========================================================== -->
+    <section class="view is-active" id="view-search">
+      <div class="hero container">
+        <div class="hero-copy">
+          <span class="eyebrow"><i class="pulse-dot"></i> 2,400+ routes · Live 3D seat maps</span>
+          <h1 class="hero-title">
+            <span class="line"><span>Fly beyond</span></span>
+            <span class="line"><span>the <em class="grad-text">ordinary.</em></span></span>
+          </h1>
+          <p class="hero-sub">Compare fares from 180+ airlines, pick the exact seat you want on a live cabin map, and walk to the gate with your boarding pass — all in under a minute.</p>
+          <div class="hero-trust">
+            <div class="avatars"><i style="--h:260"></i><i style="--h:190"></i><i style="--h:330"></i><i style="--h:40"></i></div>
+            <p><b>4.9</b> <span class="stars">★★★★★</span><br /><small>Loved by 2M+ travellers</small></p>
+          </div>
+        </div>
+
+        <div class="hero-visual">
+          <div class="globe-wrap">
+            <div class="globe-halo"></div>
+            <canvas id="globe" aria-label="Rotating globe showing your selected route"></canvas>
+            <div class="orbit o1"><i></i></div>
+            <div class="orbit o2"><i></i></div>
+          </div>
+          <div class="float-card hero-route glass" data-tilt="14">
+            <small>Your route</small>
+            <div class="fcr-codes">
+              <b id="heroFrom">MAA</b>
+              <span class="fcr-line"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></span>
+              <b id="heroTo">DXB</b>
+            </div>
+            <span class="fcr-meta" id="heroMeta">2,930 km · ~4h 10m</span>
+          </div>
+          <div class="float-card fc-live glass">
+            <span class="live-dot"></span><span><b id="airborne">12,847</b> flights airborne now</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search card -->
+      <div class="container">
+        <form class="search-card glass" id="search-card" novalidate>
+          <div class="search-top">
+            <div class="segmented" id="tripToggle" role="tablist" aria-label="Trip type">
+              <span class="seg-pill"></span>
+              <button type="button" class="is-active" data-trip="oneway" role="tab">One way</button>
+              <button type="button" data-trip="round" role="tab">Round trip</button>
+            </div>
+            <div class="search-perks">
+              <span><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1.2 14.2-3.5-3.5 1.4-1.4 2.1 2.1 4.9-4.9 1.4 1.4-6.3 6.3Z"/></svg>Free cancellation 24h</span>
+              <span><svg viewBox="0 0 24 24"><path d="M12 1a11 11 0 1 0 0 22 11 11 0 0 0 0-22Zm1 11.4V6h-2v7.2l5.2 3.1 1-1.7-4.2-2.2Z"/></svg>Price lock 48h</span>
+            </div>
+          </div>
+
+          <div class="search-grid">
+            <div class="field airport" data-field="from">
+              <button type="button" class="ap-trigger" aria-haspopup="listbox">
+                <span class="f-label">From</span>
+                <span class="ap-code-big">MAA</span>
+                <span class="ap-city">Chennai, India</span>
+              </button>
+              <div class="pop ap-pop glass">
+                <div class="ap-search"><svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 0 1 6.3 12.9l5.4 5.4-1.4 1.4-5.4-5.4A8 8 0 1 1 10 2Zm0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z"/></svg><input type="text" placeholder="City, airport or code" aria-label="Search departure airport" /></div>
+                <ul class="ap-list" role="listbox"></ul>
+              </div>
+            </div>
+
+            <button type="button" class="swap-btn" id="swapBtn" aria-label="Swap origin and destination">
+              <svg viewBox="0 0 24 24"><path d="M7 7h11l-3.5-3.5L16 2l6 6-6 6-1.5-1.5L18 9H7V7Zm10 10H6l3.5 3.5L8 22l-6-6 6-6 1.5 1.5L6 15h11v2Z"/></svg>
+            </button>
+
+            <div class="field airport" data-field="to">
+              <button type="button" class="ap-trigger" aria-haspopup="listbox">
+                <span class="f-label">To</span>
+                <span class="ap-code-big">DXB</span>
+                <span class="ap-city">Dubai, UAE</span>
+              </button>
+              <div class="pop ap-pop glass">
+                <div class="ap-search"><svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 0 1 6.3 12.9l5.4 5.4-1.4 1.4-5.4-5.4A8 8 0 1 1 10 2Zm0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z"/></svg><input type="text" placeholder="City, airport or code" aria-label="Search destination airport" /></div>
+                <ul class="ap-list" role="listbox"></ul>
+              </div>
+            </div>
+
+            <label class="field date-field" id="departField">
+              <span class="f-label">Departure</span>
+              <span class="d-big" id="departDay">—</span>
+              <span class="d-small" id="departWeek">—</span>
+              <input type="date" id="departDate" aria-label="Departure date" />
+            </label>
+
+            <label class="field date-field is-empty" id="returnField">
+              <span class="f-label">Return</span>
+              <span class="d-big" id="returnDay">+ Add</span>
+              <span class="d-small" id="returnWeek">Save more on round trips</span>
+              <input type="date" id="returnDate" aria-label="Return date" />
+            </label>
+
+            <div class="field pax-field" id="paxField">
+              <button type="button" class="pax-trigger" aria-haspopup="dialog">
+                <span class="f-label">Travellers & class</span>
+                <span class="d-big" id="paxSummary">1 Traveller</span>
+                <span class="d-small" id="cabinSummary">Economy</span>
+              </button>
+              <div class="pop pax-pop glass" role="dialog" aria-label="Travellers and cabin">
+                <div class="counter-row">
+                  <div><b>Adults</b><small>12+ years</small></div>
+                  <div class="counter" data-key="adults"><button type="button" data-delta="-1" aria-label="Fewer adults">−</button><output>1</output><button type="button" data-delta="1" aria-label="More adults">+</button></div>
+                </div>
+                <div class="counter-row">
+                  <div><b>Children</b><small>2–11 years</small></div>
+                  <div class="counter" data-key="children"><button type="button" data-delta="-1" aria-label="Fewer children">−</button><output>0</output><button type="button" data-delta="1" aria-label="More children">+</button></div>
+                </div>
+                <div class="cabin-opts">
+                  <label><input type="radio" name="cabin" value="economy" checked /><span>Economy</span></label>
+                  <label><input type="radio" name="cabin" value="premium" /><span>Premium</span></label>
+                  <label><input type="radio" name="cabin" value="business" /><span>Business</span></label>
+                </div>
+                <button type="button" class="btn-primary sm block" id="paxDone">Done</button>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary search-btn magnetic">
+              <svg viewBox="0 0 24 24"><path d="M10 2a8 8 0 0 1 6.3 12.9l5.4 5.4-1.4 1.4-5.4-5.4A8 8 0 1 1 10 2Zm0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z"/></svg>
+              <span>Search flights</span>
+            </button>
+          </div>
+        </form>
+
+        <div class="stats" data-reveal>
+          <div><b data-count="180">0</b><span>+ airlines</span></div>
+          <div><b data-count="2400">0</b><span>+ routes</span></div>
+          <div><b data-count="98">0</b><span>% on-time seat guarantee</span></div>
+          <div><b data-count="24">0</b><span>/7 human support</span></div>
+        </div>
+      </div>
+
+      <!-- Destinations -->
+      <section class="container section" id="deals">
+        <div class="section-head" data-reveal>
+          <span class="eyebrow">Trending from <b id="dealsFrom">Chennai</b></span>
+          <h2>Where to <em class="grad-text">next?</em></h2>
+          <p>Hand-picked escapes with fares that won't last. Tap one to plan it.</p>
+        </div>
+        <div class="deals-grid" id="dealsGrid"></div>
+      </section>
+
+      <!-- Features -->
+      <section class="container section" id="why">
+        <div class="section-head" data-reveal>
+          <span class="eyebrow">The AeroLux difference</span>
+          <h2>Booking, <em class="grad-text">re-engineered.</em></h2>
+        </div>
+        <div class="features">
+          <article class="feature glass" data-tilt="10" data-reveal>
+            <span class="f-icon"><svg viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3h-1v4h-2v-4H11v4H9v-4H8a3 3 0 0 1-3-3V5a2 2 0 0 1 2-2Zm0 2v6h10V5H7Z"/></svg></span>
+            <h3>Live 3D seat maps</h3>
+            <p>See every seat in the cabin — window, aisle, extra legroom — and lock it before anyone else.</p>
+          </article>
+          <article class="feature glass" data-tilt="10" data-reveal>
+            <span class="f-icon"><svg viewBox="0 0 24 24"><path d="M12 1a11 11 0 1 0 0 22 11 11 0 0 0 0-22Zm1 11.4V6h-2v7.2l5.2 3.1 1-1.7-4.2-2.2Z"/></svg></span>
+            <h3>48-hour price lock</h3>
+            <p>Found the one? Freeze the fare while you check with family. No surprises at checkout.</p>
+          </article>
+          <article class="feature glass" data-tilt="10" data-reveal>
+            <span class="f-icon"><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm-1.2 14.2-3.5-3.5 1.4-1.4 2.1 2.1 4.9-4.9 1.4 1.4-6.3 6.3Z"/></svg></span>
+            <h3>Zero-fee changes</h3>
+            <p>Plans shift. Change dates on eligible fares without paying a rupee in change fees.</p>
+          </article>
+          <article class="feature glass" data-tilt="10" data-reveal>
+            <span class="f-icon"><svg viewBox="0 0 24 24"><path d="M4 18h16v2H4v-2Zm1-2 1.5-7h11L19 16H5Zm3-9V5a4 4 0 0 1 8 0v2h-2V5a2 2 0 0 0-4 0v2H8Z"/></svg></span>
+            <h3>Instant boarding pass</h3>
+            <p>Your pass lands the second you pay — with seat, gate and boarding zone ready to scan.</p>
+          </article>
+        </div>
+      </section>
+
+      <footer class="footer container">
+        <a class="brand" href="#" data-go="search"><span class="brand-mark"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></span><span class="brand-name">Aero<b>Lux</b></span></a>
+        <p>Demo booking experience · No real tickets are issued and no payments are processed.</p>
+        <p class="muted">© <span id="year"></span> AeroLux</p>
+      </footer>
+    </section>
+
+    <!-- =========================================================
+         VIEW 2 — FLIGHTS
+    ========================================================== -->
+    <section class="view" id="view-flights">
+      <div class="container">
+        <div class="results-head">
+          <button class="back-btn" type="button" data-go="search">
+            <svg viewBox="0 0 24 24"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20v-2Z"/></svg>Modify search
+          </button>
+          <div class="route-title">
+            <h2><span id="rFrom">MAA</span><span class="rt-plane"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></span><span id="rTo">DXB</span></h2>
+            <p id="rMeta">—</p>
+          </div>
+          <div class="leg-tabs" id="legTabs"></div>
+        </div>
+
+        <div class="date-strip" id="dateStrip"></div>
+
+        <div class="results-layout">
+          <aside class="filters glass">
+            <div class="filter-block">
+              <h4>Stops</h4>
+              <div class="chips" id="stopFilter">
+                <button type="button" class="chip is-active" data-stops="any">Any</button>
+                <button type="button" class="chip" data-stops="0">Non-stop</button>
+                <button type="button" class="chip" data-stops="1">1+ stop</button>
+              </div>
+            </div>
+            <div class="filter-block">
+              <h4>Departure time</h4>
+              <div class="time-tiles" id="timeFilter">
+                <button type="button" data-time="morning"><svg viewBox="0 0 24 24"><path d="M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm-1-6h2v3h-2V1Zm0 19h2v3h-2v-3ZM3.5 4.9l1.4-1.4 2.1 2.1-1.4 1.4-2.1-2.1Zm13.1 13.1 1.4-1.4 2.1 2.1-1.4 1.4-2.1-2.1ZM1 11h3v2H1v-2Zm19 0h3v2h-3v-2Z"/></svg><b>Morning</b><small>05–12</small></button>
+                <button type="button" data-time="afternoon"><svg viewBox="0 0 24 24"><path d="M12 6a6 6 0 1 1 0 12 6 6 0 0 1 0-12Z"/></svg><b>Afternoon</b><small>12–17</small></button>
+                <button type="button" data-time="evening"><svg viewBox="0 0 24 24"><path d="M2 18h20v2H2v-2Zm10-9a6 6 0 0 1 6 6H6a6 6 0 0 1 6-6Z"/></svg><b>Evening</b><small>17–21</small></button>
+                <button type="button" data-time="night"><svg viewBox="0 0 24 24"><path d="M12.3 2a8 8 0 0 0 9.6 9.9A10 10 0 1 1 12.3 2Z"/></svg><b>Night</b><small>21–05</small></button>
+              </div>
+            </div>
+            <div class="filter-block">
+              <h4>Airlines</h4>
+              <div class="airline-filter" id="airlineFilter"></div>
+            </div>
+            <button type="button" class="link-btn" id="resetFilters">Reset all filters</button>
+          </aside>
+
+          <div class="results-main">
+            <div class="results-toolbar">
+              <p><b id="resultCount">0</b> flights found</p>
+              <div class="segmented sm" id="sortTabs">
+                <span class="seg-pill"></span>
+                <button type="button" class="is-active" data-sort="best">Best</button>
+                <button type="button" data-sort="cheap">Cheapest</button>
+                <button type="button" data-sort="fast">Fastest</button>
+                <button type="button" data-sort="early">Earliest</button>
+              </div>
+            </div>
+            <div class="flight-list" id="flightList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         VIEW 3 — SEATS
+    ========================================================== -->
+    <section class="view" id="view-seats">
+      <div class="container two-col">
+        <div class="seat-stage">
+          <div class="stage-head">
+            <button class="back-btn" type="button" data-go="flights"><svg viewBox="0 0 24 24"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20v-2Z"/></svg>Change flight</button>
+            <h2>Choose your <em class="grad-text">seat</em></h2>
+            <p id="seatHint">Select 1 seat · tap a seat to assign it</p>
+          </div>
+
+          <div class="legend">
+            <span><i class="lg lg-free"></i>Available</span>
+            <span><i class="lg lg-sel"></i>Your pick</span>
+            <span><i class="lg lg-exit"></i>Extra legroom</span>
+            <span><i class="lg lg-taken"></i>Occupied</span>
+            <span><i class="lg lg-off"></i>Other cabin</span>
+          </div>
+
+          <div class="seat-tools">
+            <button type="button" class="btn-ghost sm" id="autoPick"><svg viewBox="0 0 24 24"><path d="m19 9 1.3-2.7L23 5l-2.7-1.3L19 1l-1.3 2.7L15 5l2.7 1.3L19 9Zm-7.5.5L9 4 6.5 9.5 1 12l5.5 2.5L9 20l2.5-5.5L17 12l-5.5-2.5Z"/></svg>Auto-pick seats together</button>
+            <button type="button" class="btn-ghost sm" id="clearSeats">Clear</button>
+          </div>
+
+          <div class="plane-wrap">
+            <div class="plane" id="plane">
+              <div class="wing left"></div>
+              <div class="wing right"></div>
+              <div class="fuselage">
+                <div class="nose"><div class="cockpit"></div><span>FRONT</span></div>
+                <div class="cabin" id="cabin"></div>
+                <div class="aft"><span>GALLEY · LAV</span></div>
+              </div>
+              <div class="tail"></div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="summary glass">
+          <h3>Trip summary</h3>
+          <div class="summary-body"></div>
+          <button type="button" class="btn-primary block magnetic" id="seatContinue" disabled>Continue to travellers</button>
+        </aside>
+      </div>
+      <div class="seat-tip" id="seatTip" role="tooltip"></div>
+    </section>
+
+    <!-- =========================================================
+         VIEW 4 — TRAVELLER DETAILS
+    ========================================================== -->
+    <section class="view" id="view-details">
+      <div class="container two-col">
+        <form class="details-form" id="detailsForm" novalidate>
+          <div class="stage-head">
+            <button class="back-btn" type="button" data-go="seats"><svg viewBox="0 0 24 24"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20v-2Z"/></svg>Back to seats</button>
+            <h2>Who's <em class="grad-text">flying?</em></h2>
+            <p>Names must match the government ID you'll travel with.</p>
+          </div>
+          <div id="paxForms"></div>
+
+          <fieldset class="pax-card glass">
+            <legend><span class="pax-num"><svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 4-8 5-8-5V6l8 5 8-5v2Z"/></svg></span>Contact details<em>Your e-ticket goes here</em></legend>
+            <div class="fgrid two">
+              <div class="fl"><input id="contactEmail" type="email" placeholder=" " autocomplete="email" required /><label for="contactEmail">Email address</label><small class="err"></small></div>
+              <div class="fl"><input id="contactPhone" type="tel" placeholder=" " autocomplete="tel" inputmode="numeric" maxlength="10" required /><label for="contactPhone">Mobile number</label><small class="err"></small></div>
+            </div>
+          </fieldset>
+        </form>
+
+        <aside class="summary glass">
+          <h3>Trip summary</h3>
+          <div class="summary-body"></div>
+          <button type="submit" form="detailsForm" class="btn-primary block magnetic">Continue to payment</button>
+        </aside>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         VIEW 5 — PAYMENT
+    ========================================================== -->
+    <section class="view" id="view-payment">
+      <div class="container two-col">
+        <form class="pay-form" id="payForm" novalidate>
+          <div class="stage-head">
+            <button class="back-btn" type="button" data-go="details"><svg viewBox="0 0 24 24"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20v-2Z"/></svg>Back to travellers</button>
+            <h2>Secure <em class="grad-text">checkout</em></h2>
+            <p class="demo-note"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z"/></svg>Demo checkout — nothing is charged. Use any test values, e.g. 4242 4242 4242 4242.</p>
+          </div>
+
+          <div class="segmented" id="payTabs">
+            <span class="seg-pill"></span>
+            <button type="button" class="is-active" data-pay="card">Card</button>
+            <button type="button" data-pay="upi">UPI</button>
+          </div>
+
+          <div class="pay-panel is-active" data-panel="card">
+            <div class="card3d" id="card3d">
+              <div class="card-inner">
+                <div class="card-face card-front">
+                  <div class="card-holo"></div>
+                  <div class="cf-top">
+                    <span class="card-chip"></span>
+                    <svg class="contactless" viewBox="0 0 24 24"><path d="M8.5 5.5a9 9 0 0 1 0 13M12 3a13 13 0 0 1 0 18M5 8a5 5 0 0 1 0 8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    <span class="cv-brand" id="cvBrand">AEROLUX</span>
+                  </div>
+                  <div class="cv-number" id="cvNumber">•••• •••• •••• ••••</div>
+                  <div class="cf-bottom">
+                    <div><small>Card holder</small><b id="cvName">YOUR NAME</b></div>
+                    <div><small>Expires</small><b id="cvExp">MM/YY</b></div>
+                  </div>
+                </div>
+                <div class="card-face card-back">
+                  <div class="stripe"></div>
+                  <div class="sig"><span></span><b id="cvCvv">•••</b></div>
+                  <p>This card is a visual demo. AeroLux never stores card details.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="fgrid two">
+              <div class="fl span2"><input id="cardNum" inputmode="numeric" autocomplete="off" placeholder=" " maxlength="19" /><label for="cardNum">Card number</label><small class="err"></small></div>
+              <div class="fl span2"><input id="cardName" autocomplete="off" placeholder=" " maxlength="26" /><label for="cardName">Name on card</label><small class="err"></small></div>
+              <div class="fl"><input id="cardExp" inputmode="numeric" autocomplete="off" placeholder=" " maxlength="5" /><label for="cardExp">Expiry (MM/YY)</label><small class="err"></small></div>
+              <div class="fl"><input id="cardCvv" inputmode="numeric" autocomplete="off" placeholder=" " maxlength="4" type="password" /><label for="cardCvv">CVV</label><small class="err"></small></div>
+            </div>
+          </div>
+
+          <div class="pay-panel" data-panel="upi">
+            <div class="upi-box glass">
+              <div class="upi-qr" id="upiQr"></div>
+              <div>
+                <h4>Pay with any UPI app</h4>
+                <p class="muted">Scan the code, or enter your UPI ID below.</p>
+                <div class="fl"><input id="upiId" autocomplete="off" placeholder=" " /><label for="upiId">UPI ID (name@bank)</label><small class="err"></small></div>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-primary block pay-btn magnetic" id="payBtn">
+            <svg viewBox="0 0 24 24"><path d="M17 9V7A5 5 0 0 0 7 7v2a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2ZM9 7a3 3 0 0 1 6 0v2H9V7Z"/></svg>
+            <span>Pay <b class="total-val">₹0</b></span>
+          </button>
+          <p class="secure-line"><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Z"/></svg>256-bit encrypted · PCI-DSS compliant (demo)</p>
+        </form>
+
+        <aside class="summary glass">
+          <h3>Trip summary</h3>
+          <div class="summary-body"></div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         VIEW 6 — BOARDING PASS
+    ========================================================== -->
+    <section class="view" id="view-pass">
+      <div class="container">
+        <div class="success-head">
+          <div class="success-check">
+            <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" /><path d="M14 27l8 8 16-17" /></svg>
+          </div>
+          <h2>You're all set, <em class="grad-text" id="passName">traveller</em>!</h2>
+          <p>Booking confirmed · PNR <b class="pnr" id="pnrCode">——</b> · E-ticket sent to <span id="passEmail"></span></p>
+        </div>
+        <div class="pass-list" id="passList"></div>
+        <div class="pass-actions">
+          <button type="button" class="btn-ghost" id="printBtn"><svg viewBox="0 0 24 24"><path d="M6 2h12v5H6V2Zm-2 7h16a2 2 0 0 1 2 2v6h-4v5H6v-5H2v-6a2 2 0 0 1 2-2Zm4 8v3h8v-3H8Z"/></svg>Print / Save PDF</button>
+          <button type="button" class="btn-primary magnetic" id="newBooking">Book another trip</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== Loader ===== -->
+  <div class="loader" id="loader" aria-live="polite">
+    <div class="loader-sky">
+      <i class="cloud c1"></i><i class="cloud c2"></i><i class="cloud c3"></i>
+      <div class="loader-plane"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></div>
+    </div>
+    <p id="loaderText">Searching…</p>
+    <div class="loader-bar"><i id="loaderBar"></i></div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+  <canvas id="confetti" aria-hidden="true"></canvas>
+
+  <script src="script.js"></script>
+</body>
+</html>
