@@ -1544,8 +1544,9 @@ function init() {
   bindTilt();
   bindCardTilt();
   bindMagnetic();
-  bindCursorGlow();
+   bindCursorGlow();            
   bindReveal();
   liveCounter();
 }
 init();
+                                      //  FINISH
